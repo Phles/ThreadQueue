@@ -24,7 +24,7 @@ int main(void) {
 	
 	t.run();
 	
-	std::cin.get();
+	//std::cin.get();
 	return 0;
 
 	

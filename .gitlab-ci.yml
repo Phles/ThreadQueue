@@ -5,7 +5,7 @@ buildLinux:
         - console
     stage: build
     script:
-        - g++ ./ThreadQueue/test.cpp -o test.out
+        - g++ -std=c++17 ./ThreadQueue/test.cpp -o test.out
     artifacts:
         paths:
             - test.out

@@ -10,6 +10,7 @@
 #include <vector>
 #include <functional>
 #include <any>
+#include <tuple>
 namespace Phles {
 	/*
 	 * Abstract class common to all tasks

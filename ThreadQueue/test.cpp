@@ -12,19 +12,20 @@ int someWork(int seconds,int a) {
 	return a + seconds;
 }
 
+
+
 /*
  * Entry point for testing
  */
 int main(void) {
 	int a = 2;
-
-	a += 1;	
+	Phles::Task<int PHFUNCT(int,int)> task(someWork, a, 0);
+	Phles::Task<int PHFUNCT(int,int)> t(someWork,a,0);
 	
-	Phles::Task<int(int,int),int,int> t(someWork,a,0);
-	
+	task.run();
 	t.run();
 	
-	std::cin.get();
+	//std::cin.get();
 	return 0;
 
 	

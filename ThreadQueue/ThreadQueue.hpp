@@ -12,6 +12,7 @@
 #include <chrono>
 
 //Storage headers
+#include <vector>
 #include <map>
 #include <set>
 #include <functional>
@@ -98,6 +99,9 @@ namespace Phles {
 		//Flag to move to the next phase.
 		std::condition_variable changePhase;
 
+		//List of active threads
+		std::vector<std::thread*> workers;
+		
 		/* Internal Functions for use by the Thread Loop */
 		
 		
@@ -118,6 +122,7 @@ namespace Phles {
 						//A job has finished, so wake the other threads to check if more work is available
 						changePhase.notify_all();
 					}
+					
 				}
 			}
 
@@ -197,7 +202,39 @@ namespace Phles {
 
 		}
 
-		//Start the thread Queue
+		/*
+		 * Start the thread Queue
+		 * Args:
+		 * workerCt: number of threads to spawn(excluding calling thread)
+		 * includeCaller: if true, the calling thread runs a threadloop and acts like a worker
+		 */
+		void launch(size_t workerCt=2,bool includeCaller=false) {
+
+			for (size_t c = 0; c <= workerCt;c++) {
+				if(c == 0)
+					workers.emplace_back(new std::thread(&Phles::ThreadQueue::ThreadLoop, std::ref(*this), true));
+				else
+					workers.emplace_back(new std::thread(&Phles::ThreadQueue::ThreadLoop, std::ref(*this), false));
+			}
+			
+		}
+		//Join all threads called in the thread queue
+		void join(){
+			for (auto& worker : workers) {
+				worker->join();
+				delete worker;
+			}
+			workers.clear();
+		}
+
+		//Detach all threads called in the thread queue
+		void detach(){
+			for (auto& worker : workers) {
+				worker->detach();
+				delete worker;
+			}
+			workers.clear();
+		}
 
 	};
 	

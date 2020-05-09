@@ -45,7 +45,9 @@ namespace Phles {
 
 	};
 
-	
+	class ThreadQueue {
+
+	};
 	
 	
 }

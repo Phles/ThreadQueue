@@ -19,11 +19,17 @@ int someWork(int seconds,int a) {
  */
 int main(void) {
 	int a = 2;
-	Phles::Task<int PHFUNCT(int,int)> task(someWork, a, 0);
+	
 	Phles::Task<int PHFUNCT(int,int)> t(someWork,a,0);
 	
-	task.run();
-	t.run();
+	Phles::ThreadQueue queue;
+	queue.addJob(0, 0, new Phles::Task<int PHFUNCT(int,int)>(someWork,a,0));
+	queue.addJob(0, 0, new Phles::Task<int PHFUNCT(int,int)>(someWork,a,1));
+	queue.addJob(0, 0, new Phles::Task<int PHFUNCT(int,int)>(someWork,a,2));
+	
+	std::thread th(&Phles::ThreadQueue::ThreadLoop, std::ref(queue));
+	
+	th.join();
 	
 	//std::cin.get();
 	return 0;

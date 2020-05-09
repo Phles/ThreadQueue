@@ -9,3 +9,14 @@ buildLinux:
     artifacts:
         paths:
             - test.out
+
+# Run previously built linux binary
+runLinux:
+    tags:
+       - linux
+       - console
+    stage: test
+    dependencies: 
+        - buildLinux
+    script:
+        - ./test.out

@@ -1,0 +1,22 @@
+# Compile with G++
+buildLinux:
+    tags:
+        - linux
+        - console
+    stage: build
+    script:
+        - g++ -std=c++17 ./ThreadQueue/test.cpp -o test.out
+    artifacts:
+        paths:
+            - test.out
+
+# Run previously built linux binary
+runLinux:
+    tags:
+       - linux
+       - console
+    stage: test
+    dependencies: 
+        - buildLinux
+    script:
+        - ./test.out

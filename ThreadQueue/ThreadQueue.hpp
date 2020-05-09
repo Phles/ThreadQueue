@@ -40,7 +40,7 @@ namespace Phles {
 
 		//Run the function
 		void run() override{
-			std::apply(function, arguments);
+			std::apply(function, arguments);		
 		}
 
 	};

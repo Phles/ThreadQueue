@@ -1,0 +1,11 @@
+# Compile with G++
+buildLinux:
+    tags:
+        - linux
+        - cpp
+    stage: build
+    script:
+        - g++ ./ThreadQueue/test.cpp -o test.out
+    artifacts:
+        paths:
+            - test.out

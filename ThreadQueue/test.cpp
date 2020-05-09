@@ -16,6 +16,15 @@ int someWork(int seconds,int a) {
 
 	return a + seconds;
 }
+void someOtherWork(int a, int seconds) {
+	
+	std::this_thread::sleep_for(std::chrono::seconds(seconds));
+
+	Phles::ThreadQueue::sharedLock.lock();
+	std::cout << "Finished Task " << -1*a << " at " << seconds << "s sleep on thread " << std::this_thread::get_id() << "\n";
+	Phles::ThreadQueue::sharedLock.unlock();
+
+}
 
 
 
@@ -30,6 +39,7 @@ int main(void) {
 	Phles::ThreadQueue queue;
 	for (int c = 0; c < 50; c++) {
 		queue.addJob((c < 25)? 0 : 1, 2, new Phles::Task<int PHFUNCT(int, int)>(someWork,a*c % 5, c));
+		queue.addJob((c < 25) ? 1 : 2, 2, new Phles::Task<void PHFUNCT(int, int)>(someOtherWork, c, a * c % 5));
 	}
 	
 	queue.launch(5);

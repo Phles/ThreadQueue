@@ -2,7 +2,7 @@
 buildLinux:
     tags:
         - linux
-        - cpp
+        - console
     stage: build
     script:
         - g++ ./ThreadQueue/test.cpp -o test.out

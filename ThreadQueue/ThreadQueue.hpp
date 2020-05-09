@@ -108,25 +108,43 @@ namespace Phles {
 		 */
 		void runPhase(int phase,std::unique_lock<std::mutex>&lock){
 			
-			//Loop for the phase
-			while (endPhase[phase].size() > 0) {
+			//Ensure the phase has new jobs starting
+			if (startPhase.count(phase) > 0) {
+				//Start a job that hasn't been started
+				for (auto& job : startPhase[phase]) {
+					//Ensure the job wasn't already done
+					if (!job->isComplete && !job->isRunning) {
+						job->run();
+						//A job has finished, so wake the other threads to check if more work is available
+						changePhase.notify_all();
+					}
+				}
+			}
 
+
+			//Loop for ending the phase
+			while (endPhase[phase].size() > 0) {
 				//Locked section, tries removing a completed job
 				if (lock.try_lock()) {
 					auto job = endPhase[phase].begin();
-					//Job has finished, can be removed.
-					if ((*job)->isComplete && !(*job)->isRunning) {
-						//Delete object pointed to by iterator
-						delete (*job);
-						endPhase[phase].erase(*job);
-						lock.unlock();
+					//Job must exist
+					if (job != endPhase[phase].end()) {
+						//Job has finished, can be removed.
+						if ((*job)->isComplete && !(*job)->isRunning) {
+							//Delete object pointed to by iterator
+							delete (*job);
+							endPhase[phase].erase(*job);
+						}
+						//Job hasn't finished, so it cannot be removed. Wait for 1 second
+						else {
+							if (changePhase.wait_for(lock, 20s) == std::cv_status::timeout) {
+								lock.lock();
+							}
+						}
 					}
-
-					//Job hasn't finished, so it cannot be removed. Wait for 1 second
-					else {
-						lock.unlock();
-						changePhase.wait_for(lock, 1s);
-					}
+					
+					lock.unlock();
+					
 
 				}
 
@@ -134,37 +152,30 @@ namespace Phles {
 		}
 
 	public:
+		//Shared mutex for child threads
+		static std::mutex sharedLock;
+		//Constructor
 		ThreadQueue():phase(0){}
 
-		//Function that runs jobs from the thread queue
-		void ThreadLoop() {
+		//Function that runs jobs from the thread queue. 
+		void ThreadLoop(bool isMain=false) {
 			std::unique_lock<std::mutex> lock(mutexLock, std::defer_lock);
 			
 			//Last phase in the queue
 			int last = (endPhase.rbegin())->first;
 			
 			while (last >= phase) {
-				//Ensure the phase has new jobs starting
-				if (startPhase.count(phase) > 0) {
-					//Start a job that hasn't been started
-					for (auto& job : startPhase[phase]) {
-						//Ensure the job wasn't already done
-						if (!job->isComplete && !job->isRunning) {
-							job->run();
-							//A job has finished, so wake the other threads to check if more work is available
-							changePhase.notify_all();
-						}
-					}
-				}
-				//Ensure the phase waits for jobs that end in this phase before it reaches the end.
-				if(endPhase.count(phase) > 0) {
-					runPhase(phase,lock);
-					//The phase has ended, so clean up and ensure the phase moves by only one
+				
+				//Run the phase
+				runPhase(phase,lock);
+				//The phase has ended, so clean up and ensure the phase moves when the main phase moves
+				if (isMain) {
 					lock.lock();
 					phase++;
 					lock.unlock();
-
 				}
+
+				
 			}
 		}
 
@@ -172,7 +183,7 @@ namespace Phles {
 		 * Adds a job to the thread queue
 		 */
 		void addJob(int start,int end, Job* task) {
-			
+
 
 			//Ensure each phase exists.
 			if (startPhase.count(start) == 0)
@@ -190,6 +201,8 @@ namespace Phles {
 
 	};
 	
+	//Define Static var
+	std::mutex ThreadQueue::sharedLock;
 	
 }
 

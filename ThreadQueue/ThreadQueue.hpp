@@ -1,28 +1,46 @@
 /*
- *  Thread Queue Library. 
- *	Runs a set of functions on threads, specifying when to start each task and when each task must end.
- *  This library, while as standard C++ as possible, has some limitations to its function.
+ *  Phles Thread Queue Library. 
  *
- *  License: zlib/png
- */
+ *
+ *  zlib/png License
+ *	Copyright (C) 2020 Phles (phlesproject@gmail.com)
+ *  
+ *  This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
+ *  Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following 
+ *  restrictions:
+ *
+ *		1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ *
+ *		2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ *
+ *		3. This notice may not be removed or altered from any source distribution.
+ *
+ ********************************************************************************************************************************************************************************/
 
 //Include Guard
 #ifndef THREADQUEUE
 #define THREADQUEUE
-//Threading headers
-#include <thread>
-#include <condition_variable>
+
+//Headers used for threading
+#include <thread> 
+#include <condition_variable> 
 #include <mutex>
 #include <atomic>
 #include <chrono>
 
 //Storage headers
-#include <vector>
-#include <map>
-#include <set>
-#include <functional>
+#include <vector> //worker threads are stored in this
+#include <map>	 //each phase uses a map
+#include <set>	// the list of jobs in a phase is met
+#include <functional> //used to ensure functions are used in tasks
 
- 
+
+/*
+ * Preprocessor macro to simplify template function and args declarations.
+ * Example:
+ *		Phles::Task<int PHFUNCT(int, int)>(_FUNCTION_PTR_,0,0);	
+ * Only named if not defined to avoid collision
+ */
 #ifndef PHFUNCT
 //Phles Function header template, prevents duplicate args
 #define PHFUNCT(...) (__VA_ARGS__),__VA_ARGS__
@@ -30,21 +48,22 @@
 
 
 
-
 namespace Phles {
 	//Allow literals in this namespace
 	using namespace std::chrono_literals;
+	
 	/*
-	 * Abstract class common to all tasks
+	 * Abstract class common to all tasks.
 	 */
 	class Job {
 	protected:
-		//When to start and end the Job in the queue
+		//When to start and end the Job in the queue.
+		//0 is considered the earliest phase.
 		int startPhase;
 		int endPhase;
 		
 	public:
-
+		//Start at phase 0 and set running and complete to false.
 		Job() :startPhase(0), endPhase(0), isRunning(false), isComplete(false) {}
 		
 		//Whether the job is currently running
@@ -57,6 +76,8 @@ namespace Phles {
 	
 	/*
 	 * Task to some function on another thread.
+	 * While return-type functions are supported, no way of accessing the return value is featured
+	 * Reference types are not currently supported.
 	 */
 	template<typename Fn,typename ...Args>
 	class Task : public Job{
@@ -167,7 +188,8 @@ namespace Phles {
 		//Constructor
 		ThreadQueue():phase(0){}
 
-		//Function that runs jobs from the thread queue. 
+		//Function that runs jobs from the thread queue.
+		// isMain determines if the individual thread advances the phase.
 		void ThreadLoop(bool isMain=false) {
 			std::unique_lock<std::mutex> lock(mutexLock, std::defer_lock);
 			
@@ -220,6 +242,9 @@ namespace Phles {
 					workers.emplace_back(new std::thread(&Phles::ThreadQueue::ThreadLoop, std::ref(*this), true));
 				else
 					workers.emplace_back(new std::thread(&Phles::ThreadQueue::ThreadLoop, std::ref(*this), false));
+			}
+			if (includeCaller) {
+				ThreadLoop(false);
 			}
 			
 		}

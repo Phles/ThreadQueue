@@ -42,7 +42,7 @@ int main(void) {
 		queue.addJob((c < 25) ? 1 : 2, 2, new Phles::Task<void PHFUNCT(int, int)>(someOtherWork, c, a * c % 5));
 	}
 	
-	queue.launch(5);
+	queue.launch(5,true);
 	queue.join();
 	
 	//std::cin.get();

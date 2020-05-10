@@ -1,7 +1,12 @@
 /*
- *  Thread Queue Library. Runs functions on threads.
+ *  Thread Queue Library. 
+ *	Runs a set of functions on threads, specifying when to start each task and when each task must end.
+ *  This library, while as standard C++ as possible, has some limitations to its function.
+ *
+ *  License: zlib/png
  */
 
+//Include Guard
 #ifndef THREADQUEUE
 #define THREADQUEUE
 //Threading headers
